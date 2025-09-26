@@ -1,3 +1,6 @@
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 import java.util.Scanner;
 
 public class Client {
@@ -18,6 +21,31 @@ public class Client {
                 case "LIST":
                     break;
                 case "DELETE":
+                    byte[] commandByte = command.getBytes();
+                    System.out.println("Enter the file name of what you want to delete.");
+                    String deleteFile = keyboard.nextLine();
+                    byte[] deleteByte = deleteFile.getBytes();
+                    SocketChannel channel = SocketChannel.open();
+                    channel.connect(new InetSocketAddress(args[0], serverPort));
+                    ByteBuffer commandBuffer = ByteBuffer.allocate(commandByte.length);
+                    commandBuffer.put(commandByte);
+                    commandBuffer.flip();
+                    ByteBuffer fileBuffer = ByteBuffer.allocate(deleteByte.length);
+                    fileBuffer.put(deleteByte);
+                    fileBuffer.flip();
+                    channel.write(commandBuffer);
+                    channel.write(fileBuffer);
+                    channel.shutdownOutput();
+                    //Done with sending
+
+                    //Receiving
+                    ByteBuffer serverReply = ByteBuffer.allocate(1024);
+                    int bytesFromServer = channel.read(serverReply);
+                    channel.close();
+                    serverReply.flip();
+                    byte[] printByte = new byte[bytesFromServer];
+                    serverReply.get(printByte);
+                    System.out.println(new String(printByte));
                     break;
                 case "RENAME":
                     break;
@@ -26,10 +54,11 @@ public class Client {
                 case "UPLOAD":
                     break;
                 case "QUIT":
+                    System.out.println("Goodbye.");
                     break;
                 default:
                     System.out.println("Invalid command, please try again.");
             }
-        } while(command!="QUIT");
+        } while(!command.equals("QUIT"));
     }
 }

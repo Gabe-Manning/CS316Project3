@@ -3,6 +3,8 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Server {
     public static void main(String[] args) throws Exception {
@@ -18,13 +20,39 @@ public class Server {
 
             int bytesReadCommand = serverChannel.read(commandBuffer);
             commandBuffer.flip();
-            String command = String.valueOf(commandBuffer.get());
+            char command = commandBuffer.getChar();
             System.out.println(command);
             switch(command) {
-                case "LIST":
-                    break;
-                case "DELETE":
+                case 'L':
                     byte[] commandByte = new byte[bytesReadCommand];
+                    commandBuffer.get(commandByte);
+                    String folderPath = "C:/Users/gabem/Desktop/CS316/CS316Project3/ServerFiles/";
+                    File folder = new File(folderPath);
+                    List<String> fileNames = new ArrayList<>();
+                    if (folder.exists() && folder.isDirectory()) {
+                        File[] files = folder.listFiles();
+                        if (files != null) {
+                            for (File file : files) {
+                                if (file.isFile()) {
+                                    fileNames.add(file.getName());
+                                }
+                            }
+                        }
+                        String success = "Success";
+                        byte[] successByte = success.getBytes();
+                        ByteBuffer successBuffer = ByteBuffer.wrap(successByte);
+                        serverChannel.write(successBuffer);
+                        serverChannel.close();
+                    } else {
+                        String fail = "Fail";
+                        byte[] failByte = fail.getBytes();
+                        ByteBuffer failBuffer = ByteBuffer.wrap(failByte);
+                        serverChannel.write(failBuffer);
+                        serverChannel.close();
+                    }
+                    break;
+                case 'D':
+                    commandByte = new byte[bytesReadCommand];
                     commandBuffer.get(commandByte);
                     ByteBuffer fileNameBuffer = ByteBuffer.allocate(1024);
                     int bytesReadFile = serverChannel.read(fileNameBuffer);
@@ -47,11 +75,11 @@ public class Server {
                         serverChannel.close();
                     }
                     break;
-                case "RENAME":
+                case 'R':
                     break;
-                case "DOWNLOAD":
+                case 'W':
                     break;
-                case "UPLOAD":
+                case 'U':
                     break;
                 default:
                     System.out.println("Received invalid command " + command);

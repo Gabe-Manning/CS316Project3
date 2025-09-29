@@ -11,30 +11,21 @@ public class Client {
         }
 
         int serverPort = Integer.parseInt(args[1]);
-        String command;
+        char command;
         do {
-            System.out.println("Enter a command (List, Delete, Rename, Download, Upload, or Quit):");
+            System.out.println("Enter a command ('L' for List, 'D' for Delete, 'R' Rename, 'W' for Download, 'U' Upload, Q ' for Quit):");
             Scanner keyboard = new Scanner(System.in);
             String message = keyboard.nextLine();
-            command = message.toUpperCase();
+            command = message.toUpperCase().charAt(0);
             switch(command) {
-                case "LIST":
-                    break;
-                case "DELETE":
-                    byte[] commandByte = command.getBytes();
-                    System.out.println("Enter the file name of what you want to delete.");
-                    String deleteFile = keyboard.nextLine();
-                    byte[] deleteByte = deleteFile.getBytes();
+                case 'L':
+                    //byte[] commandByte = command.getBytes();
                     SocketChannel channel = SocketChannel.open();
                     channel.connect(new InetSocketAddress(args[0], serverPort));
-                    ByteBuffer commandBuffer = ByteBuffer.allocate(commandByte.length);
-                    commandBuffer.put(commandByte);
+                    ByteBuffer commandBuffer = ByteBuffer.allocate(2);
+                    commandBuffer.putChar(command);
                     commandBuffer.flip();
-                    ByteBuffer fileBuffer = ByteBuffer.allocate(deleteByte.length);
-                    fileBuffer.put(deleteByte);
-                    fileBuffer.flip();
                     channel.write(commandBuffer);
-                    channel.write(fileBuffer);
                     channel.shutdownOutput();
                     //Done with sending
 
@@ -47,18 +38,45 @@ public class Client {
                     serverReply.get(printByte);
                     System.out.println(new String(printByte));
                     break;
-                case "RENAME":
+                case 'D':
+                    //commandByte = command.getBytes();
+                    System.out.println("Enter the file name of what you want to delete.");
+                    String deleteFile = keyboard.nextLine();
+                    byte[] deleteByte = deleteFile.getBytes();
+                    channel = SocketChannel.open();
+                    channel.connect(new InetSocketAddress(args[0], serverPort));
+                    commandBuffer = ByteBuffer.allocate(2);
+                    commandBuffer.putChar(command);
+                    commandBuffer.flip();
+                    ByteBuffer fileBuffer = ByteBuffer.allocate(deleteByte.length);
+                    fileBuffer.put(deleteByte);
+                    fileBuffer.flip();
+                    channel.write(commandBuffer);
+                    channel.write(fileBuffer);
+                    channel.shutdownOutput();
+                    //Done with sending
+
+                    //Receiving
+                    serverReply = ByteBuffer.allocate(1024);
+                    bytesFromServer = channel.read(serverReply);
+                    channel.close();
+                    serverReply.flip();
+                    printByte = new byte[bytesFromServer];
+                    serverReply.get(printByte);
+                    System.out.println(new String(printByte));
                     break;
-                case "DOWNLOAD":
+                case 'R':
                     break;
-                case "UPLOAD":
+                case 'W':
                     break;
-                case "QUIT":
+                case 'U':
+                    break;
+                case 'Q':
                     System.out.println("Goodbye.");
                     break;
                 default:
                     System.out.println("Invalid command, please try again.");
             }
-        } while(!command.equals("QUIT"));
+        } while(command!='Q');
     }
 }

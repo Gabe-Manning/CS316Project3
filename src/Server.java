@@ -3,83 +3,59 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Server {
     public static void main(String[] args) throws Exception {
         int port = 3000;
         ServerSocketChannel listenChannel = ServerSocketChannel.open();
-        listenChannel.bind(new InetSocketAddress(port));
+        listenChannel.socket().bind(new InetSocketAddress(port));
+
+        ByteBuffer replyBuffer;
+        String fileString;
+        File fileName;
+        File directory = new File("C:/Users/gabem/Desktop/CS316/CS316Project3/ServerFiles");
 
         while(true) {
-            //accept() handles client connection requests and establishes a new channel with each client
-            //serverChannel represents this new channel
             SocketChannel serverChannel = listenChannel.accept();
             ByteBuffer commandBuffer = ByteBuffer.allocate(1024);
-
             int bytesReadCommand = serverChannel.read(commandBuffer);
             commandBuffer.flip();
-            char command = commandBuffer.getChar();
-            System.out.println(command);
-            switch(command) {
-                case 'L':
-                    byte[] commandByte = new byte[bytesReadCommand];
-                    commandBuffer.get(commandByte);
-                    String folderPath = "C:/Users/gabem/Desktop/CS316/CS316Project3/ServerFiles/";
-                    File folder = new File(folderPath);
-                    List<String> fileNames = new ArrayList<>();
-                    if (folder.exists() && folder.isDirectory()) {
-                        File[] files = folder.listFiles();
-                        if (files != null) {
-                            for (File file : files) {
-                                if (file.isFile()) {
-                                    fileNames.add(file.getName());
-                                }
-                            }
-                        }
-                        String success = "Success";
-                        byte[] successByte = success.getBytes();
-                        ByteBuffer successBuffer = ByteBuffer.wrap(successByte);
-                        serverChannel.write(successBuffer);
-                        serverChannel.close();
+            byte[] clientSent = new byte[bytesReadCommand];
+            commandBuffer.get(clientSent);
+            String command = new String(clientSent);
+            String commandFirst = command.substring(0, 1).toUpperCase();
+            switch(commandFirst) {
+                case "L":
+                    String list[] = directory.list();
+                    String returnString = "";
+                    for (int i = 0; i < list.length; i++) {
+                        returnString = returnString + " " + (i + 1) + ". " + list[i];
+                    }
+                    if (returnString.equals("")) {
+                        replyBuffer = ByteBuffer.wrap("F".getBytes());
+                        serverChannel.write(replyBuffer);
                     } else {
-                        String fail = "Fail";
-                        byte[] failByte = fail.getBytes();
-                        ByteBuffer failBuffer = ByteBuffer.wrap(failByte);
-                        serverChannel.write(failBuffer);
-                        serverChannel.close();
+                        returnString = "S\n" + returnString;
+                        replyBuffer = ByteBuffer.wrap(returnString.getBytes());
+                        serverChannel.write(replyBuffer);
                     }
                     break;
-                case 'D':
-                    commandByte = new byte[bytesReadCommand];
-                    commandBuffer.get(commandByte);
-                    ByteBuffer fileNameBuffer = ByteBuffer.allocate(1024);
-                    int bytesReadFile = serverChannel.read(fileNameBuffer);
-                    fileNameBuffer.flip();
-                    byte[] a = new byte[bytesReadFile];
-                    String nameFile = String.valueOf(fileNameBuffer.get(a));
-                    File file = new File("C:/Users/gabem/Desktop/CS316/CS316Project3/ServerFiles/" + nameFile);
-                    if (file.exists()) {
-                        file.delete();
-                        String success = "Success";
-                        byte[] successByte = success.getBytes();
-                        ByteBuffer successBuffer = ByteBuffer.wrap(successByte);
-                        serverChannel.write(successBuffer);
-                        serverChannel.close();
+                case "D":
+                    fileString = command.substring(1);
+                    fileName = new File(directory + "/" + fileString);
+                    if (fileName.exists() && !fileName.delete()) {
+                        replyBuffer = ByteBuffer.wrap("F".getBytes());
+                        serverChannel.write(replyBuffer);
                     } else {
-                        String fail = "Fail";
-                        byte[] failByte = fail.getBytes();
-                        ByteBuffer failBuffer = ByteBuffer.wrap(failByte);
-                        serverChannel.write(failBuffer);
-                        serverChannel.close();
+                        replyBuffer = ByteBuffer.wrap("S".getBytes());
+                        serverChannel.write(replyBuffer);
                     }
                     break;
-                case 'R':
+                case "R":
                     break;
-                case 'W':
+                case "W":
                     break;
-                case 'U':
+                case "U":
                     break;
                 default:
                     System.out.println("Received invalid command " + command);

@@ -21,6 +21,8 @@ public class Server {
             String command = String.valueOf(commandBuffer.get());
             System.out.println(command);
             switch(command) {
+                case "LIST":
+                    break;
                 case "DELETE":
                     byte[] commandByte = new byte[bytesReadCommand];
                     commandBuffer.get(commandByte);
@@ -45,6 +47,14 @@ public class Server {
                         serverChannel.close();
                     }
                     break;
+                case "RENAME":
+                    break;
+                case "DOWNLOAD":
+                    break;
+                case "UPLOAD":
+                    break;
+                default:
+                    System.out.println("Received invalid command " + command);
             }
     }}
 }

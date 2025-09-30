@@ -1,6 +1,5 @@
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Scanner;
 
@@ -65,6 +64,27 @@ public class Client {
                     channel.close();
                     break;
                 case "R":
+                    System.out.println("Enter the name of the file that you want to rename.");
+                    fileName = keyboard.nextLine();
+                    command = command + fileName;
+                    System.out.println("Please enter the new name for the file.");
+                    String renamedName = keyboard.nextLine();
+                    command = command + ":" + renamedName;
+                    commandBuffer = ByteBuffer.wrap(command.getBytes());
+                    channel = SocketChannel.open();
+                    channel.connect(new InetSocketAddress(args[0], serverPort));
+                    channel.write(commandBuffer);
+                    channel.shutdownOutput();
+                    //Done with sending
+
+                    //Receiving
+                    serverReply = ByteBuffer.allocate(1024);
+                    bytesFromServer = channel.read(serverReply);
+                    serverReply.flip();
+                    replyByte = new byte[bytesFromServer];
+                    serverReply.get(replyByte);
+                    System.out.println(new String(replyByte));
+                    channel.close();
                     break;
                 case "W":
                     break;

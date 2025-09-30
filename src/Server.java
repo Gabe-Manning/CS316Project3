@@ -32,10 +32,10 @@ public class Server {
                         returnString = returnString + " " + (i + 1) + ". " + list[i];
                     }
                     if (returnString.equals("")) {
-                        replyBuffer = ByteBuffer.wrap("F".getBytes());
+                        replyBuffer = ByteBuffer.wrap("F\nCould not show the file list.".getBytes());
                         serverChannel.write(replyBuffer);
                     } else {
-                        returnString = "S\n" + returnString;
+                        returnString = "S\nList:" + returnString;
                         replyBuffer = ByteBuffer.wrap(returnString.getBytes());
                         serverChannel.write(replyBuffer);
                     }
@@ -43,15 +43,31 @@ public class Server {
                 case "D":
                     fileString = command.substring(1);
                     fileName = new File(directory + "/" + fileString);
-                    if (fileName.exists() && !fileName.delete()) {
-                        replyBuffer = ByteBuffer.wrap("F".getBytes());
+                    if (!fileName.exists() && !fileName.delete()) {
+                        replyBuffer = ByteBuffer.wrap("F\nCould not delete the file.".getBytes());
                         serverChannel.write(replyBuffer);
                     } else {
-                        replyBuffer = ByteBuffer.wrap("S".getBytes());
+                        fileName.delete();
+                        replyBuffer = ByteBuffer.wrap("S\nFile deleted.".getBytes());
                         serverChannel.write(replyBuffer);
                     }
                     break;
                 case "R":
+                    String serverReply;
+                    int firstColon = command.indexOf(':');
+                    fileString = command.substring(1, firstColon);
+                    String renamedName = command.substring(firstColon + 1);
+                    fileName = new File(directory + "/" + fileString);
+                    File renamedFile = new File(directory + "/" + renamedName);
+                    if (fileName.renameTo(renamedFile)) {
+                        serverReply = "S\nRenamed " + fileString + " to " + renamedName;
+                        replyBuffer = ByteBuffer.wrap(serverReply.getBytes());
+                        serverChannel.write(replyBuffer);
+                    } else {
+                        serverReply = "F\nCould not rename " + fileString + ".";
+                        replyBuffer = ByteBuffer.wrap(serverReply.getBytes());
+                        serverChannel.write(replyBuffer);
+                    }
                     break;
                 case "W":
                     break;

@@ -1,5 +1,6 @@
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -17,7 +18,7 @@ public class Client {
         String command;
         Scanner keyboard = new Scanner(System.in);
         do {
-            System.out.println("Enter a command ('L' for List, 'D' for Delete, 'R' Rename, 'W' for Download, 'U' Upload, Q ' for Quit):");
+            System.out.println("Enter a command ('L' for List, 'D' for Delete, 'R' Rename, 'W' for Download, 'U' Upload, or 'Q' for Quit):");
             String message = keyboard.nextLine();
             command = message.toUpperCase();
 
@@ -28,6 +29,8 @@ public class Client {
             byte[] replyByte;
             String fileName;
             FileChannel fc;
+            String serverCode;
+            ByteBuffer fileContent;
 
             switch(command) {
                 case "L":
@@ -91,6 +94,43 @@ public class Client {
                     channel.close();
                     break;
                 case "W":
+                    System.out.println("Please enter the name of the file you would like to download.");
+                    fileName = keyboard.nextLine();
+                    command = command + fileName;
+                    commandBuffer = ByteBuffer.wrap(command.getBytes());
+                    channel = SocketChannel.open();
+                    channel.connect(new InetSocketAddress(args[0], serverPort));
+                    channel.write(commandBuffer);
+                    //Sends the download request to the server
+
+                    //First server reply
+                    serverReply = ByteBuffer.allocate(1024);
+                    bytesFromServer = channel.read(serverReply);
+                    serverReply.flip();
+                    replyByte = new byte[bytesFromServer];
+                    serverReply.get(replyByte);
+                    serverCode = new String(replyByte);
+                    System.out.println(serverCode);
+
+                    //Takes given code and uses it
+                    if (serverCode.equals("F")) {
+                        System.out.println("Could not download the file.");
+                    } else {
+                        //Tells server that the client is available to download
+                        channel.write(ByteBuffer.wrap("A".getBytes()));
+                        FileOutputStream fileOutputStream = new FileOutputStream("C:/Users/gabem/Desktop/CS316/CS316Project3/ClientFiles/" + fileName, true);
+                        fc = fileOutputStream.getChannel();
+                        fileContent = ByteBuffer.allocate(1024);
+                        while (channel.read(fileContent) >= 0) {
+                            fileContent.flip();
+                            fc.write(fileContent);
+                            fileContent.clear();
+                        }
+                        fileOutputStream.close();
+                        channel.shutdownOutput();
+                        System.out.println("File downloaded.");
+                    }
+                    channel.close();
                     break;
                 case "U":
                     System.out.println("Enter the name of the file that you want to upload");
@@ -108,7 +148,7 @@ public class Client {
                     serverReply.flip();
                     replyByte = new byte[bytesFromServer];
                     serverReply.get(replyByte);
-                    String serverCode = new String(replyByte);
+                    serverCode = new String(replyByte);
                     System.out.println(serverCode);
 
                     //Uploads the file
@@ -121,7 +161,7 @@ public class Client {
                             bufferSize = (int) fc.size();
                         }
 
-                        ByteBuffer fileContent = ByteBuffer.allocate(bufferSize);
+                        fileContent = ByteBuffer.allocate(bufferSize);
                         while (fc.read(fileContent) >= 0) {
                             channel.write(fileContent.flip());
                             fileContent.clear();

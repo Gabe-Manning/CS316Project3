@@ -1,4 +1,5 @@
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -16,6 +17,8 @@ public class Server {
         String fileString;
         File fileName;
         File directory = new File("C:/Users/gabem/Desktop/CS316/CS316Project3/ServerFiles");
+        FileChannel fc;
+        ByteBuffer fileContents;
 
         while(true) {
             SocketChannel serverChannel = listenChannel.accept();
@@ -72,20 +75,46 @@ public class Server {
                     }
                     break;
                 case "W":
+                    fileString = command.substring(1);
+                    fileName = new File(directory + "/" + fileString);
+                    if (!fileName.exists()) {
+                        serverChannel.write(ByteBuffer.wrap("F".getBytes()));
+                        serverChannel.close();
+                    } else {
+                        serverChannel.write(ByteBuffer.wrap("S".getBytes()));
+                        replyBuffer = ByteBuffer.allocate(1);
+                        serverChannel.read(replyBuffer);
+                        replyBuffer.flip();
+                        byte[] replyArray = new byte[1];
+                        replyBuffer.get(replyArray);
+                        if (new String(replyArray).equals("A")) {
+                            FileInputStream fis = new FileInputStream(directory + "/" + fileString);
+                            fc = fis.getChannel();
+                            int bufferSize = 1024;
+                            fileContents = ByteBuffer.allocate(bufferSize);
+                            while (fc.read(fileContents) >= 0) {
+                                fileContents.flip();
+                                serverChannel.write(fileContents);
+                                fileContents.clear();
+                            }
+                            fis.close();
+                            serverChannel.shutdownOutput();
+                        }
+                    }
                     break;
                 case "U":
                     //Status code sending
                     fileString = command.substring(1);
-                    File uploadFile = new File("C:/Users/gabem/Desktop/CS316/CS316Project3/ClientFiles/" + fileString);
-                    if (uploadFile.exists()) {
+                    fileName = new File("C:/Users/gabem/Desktop/CS316/CS316Project3/ClientFiles/" + fileString);
+                    if (fileName.exists()) {
                         serverChannel.write(ByteBuffer.wrap("S".getBytes()));
                     } else {
                         serverChannel.write(ByteBuffer.wrap("F".getBytes()));
                     }
                     //Uploading file
                     FileOutputStream fo = new FileOutputStream(directory + "/" + fileString);
-                    FileChannel fc = fo.getChannel();
-                    ByteBuffer fileContents = ByteBuffer.allocate(1024);
+                    fc = fo.getChannel();
+                    fileContents = ByteBuffer.allocate(1024);
                     while (serverChannel.read(fileContents) >= 0) {
                         fileContents.flip();
                         fc.write(fileContents);

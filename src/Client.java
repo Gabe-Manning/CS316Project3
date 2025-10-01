@@ -1,5 +1,8 @@
+import java.io.File;
+import java.io.FileInputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Scanner;
 
@@ -24,6 +27,7 @@ public class Client {
             int bytesFromServer;
             byte[] replyByte;
             String fileName;
+            FileChannel fc;
 
             switch(command) {
                 case "L":
@@ -89,6 +93,46 @@ public class Client {
                 case "W":
                     break;
                 case "U":
+                    System.out.println("Enter the name of the file that you want to upload");
+                    fileName = keyboard.nextLine();
+                    command = command + fileName;
+                    commandBuffer = ByteBuffer.wrap(command.getBytes());
+                    channel = SocketChannel.open();
+                    channel.connect(new InetSocketAddress(args[0], serverPort));
+                    channel.write(commandBuffer);
+                    //Checks to see if file exists and sends contact to server
+
+                    //Receiving status code on whether to upload the file
+                    serverReply = ByteBuffer.allocate(1024);
+                    bytesFromServer = channel.read(serverReply);
+                    serverReply.flip();
+                    replyByte = new byte[bytesFromServer];
+                    serverReply.get(replyByte);
+                    String serverCode = new String(replyByte);
+                    System.out.println(serverCode);
+
+                    //Uploads the file
+                    File uploadFile = new File("C:/Users/gabem/Desktop/CS316/CS316Project3/ClientFiles/" + fileName);
+                    if (serverCode.equals("S")) {
+                        FileInputStream fs = new FileInputStream(uploadFile);
+                        fc = fs.getChannel();
+                        int bufferSize = 1024;
+                        if (bufferSize > fc.size()) {
+                            bufferSize = (int) fc.size();
+                        }
+
+                        ByteBuffer fileContent = ByteBuffer.allocate(bufferSize);
+                        while (fc.read(fileContent) >= 0) {
+                            channel.write(fileContent.flip());
+                            fileContent.clear();
+                        }
+                        channel.shutdownOutput();
+                        //Done with sending
+                        channel.close();
+                        System.out.println("File uploaded with contents intact.");
+                    } else {
+                        System.out.println("The file contents could not be uploaded. The resulting file is empty.");
+                    }
                     break;
                 case "Q":
                     System.out.println("Goodbye.");
@@ -96,6 +140,6 @@ public class Client {
                 default:
                     System.out.println("Invalid command, please try again.");
             }
-        } while(command.equals("Q"));
+        } while(!command.equals("Q"));
     }
 }

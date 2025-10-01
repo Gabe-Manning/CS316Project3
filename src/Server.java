@@ -1,6 +1,8 @@
 import java.io.File;
+import java.io.FileOutputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
@@ -72,6 +74,25 @@ public class Server {
                 case "W":
                     break;
                 case "U":
+                    //Status code sending
+                    fileString = command.substring(1);
+                    File uploadFile = new File("C:/Users/gabem/Desktop/CS316/CS316Project3/ClientFiles/" + fileString);
+                    if (uploadFile.exists()) {
+                        serverChannel.write(ByteBuffer.wrap("S".getBytes()));
+                    } else {
+                        serverChannel.write(ByteBuffer.wrap("F".getBytes()));
+                    }
+                    //Uploading file
+                    FileOutputStream fo = new FileOutputStream(directory + "/" + fileString);
+                    FileChannel fc = fo.getChannel();
+                    ByteBuffer fileContents = ByteBuffer.allocate(1024);
+                    while (serverChannel.read(fileContents) >= 0) {
+                        fileContents.flip();
+                        fc.write(fileContents);
+                        fileContents.clear();
+                    }
+                    fo.close();
+                    serverChannel.close();
                     break;
                 default:
                     System.out.println("Received invalid command " + command);

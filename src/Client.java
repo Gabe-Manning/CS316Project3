@@ -1,3 +1,6 @@
+//Gabe Manning and Cameron Hosler
+//CS316 Project 3
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -118,7 +121,7 @@ public class Client {
                     } else {
                         //Tells server that the client is available to download
                         channel.write(ByteBuffer.wrap("A".getBytes()));
-                        FileOutputStream fileOutputStream = new FileOutputStream("C:/Users/gabem/Desktop/CS316/CS316Project3/ClientFiles/" + fileName, true);
+                        FileOutputStream fileOutputStream = new FileOutputStream("ClientFiles/" + fileName, true);
                         fc = fileOutputStream.getChannel();
                         fileContent = ByteBuffer.allocate(1024);
                         while (channel.read(fileContent) >= 0) {
@@ -152,7 +155,7 @@ public class Client {
                     System.out.println(serverCode);
 
                     //Uploads the file
-                    File uploadFile = new File("C:/Users/gabem/Desktop/CS316/CS316Project3/ClientFiles/" + fileName);
+                    File uploadFile = new File("ClientFiles/" + fileName);
                     if (serverCode.equals("S")) {
                         FileInputStream fs = new FileInputStream(uploadFile);
                         fc = fs.getChannel();

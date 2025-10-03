@@ -1,3 +1,6 @@
+//Gabe Manning and Cameron Hosler
+//CS316 Project 3
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -16,7 +19,7 @@ public class Server {
         ByteBuffer replyBuffer;
         String fileString;
         File fileName;
-        File directory = new File("C:/Users/gabem/Desktop/CS316/CS316Project3/ServerFiles");
+        File directory = new File("ServerFiles");
         FileChannel fc;
         ByteBuffer fileContents;
 
@@ -105,7 +108,7 @@ public class Server {
                 case "U":
                     //Status code sending
                     fileString = command.substring(1);
-                    fileName = new File("C:/Users/gabem/Desktop/CS316/CS316Project3/ClientFiles/" + fileString);
+                    fileName = new File("ClientFiles/" + fileString);
                     if (fileName.exists()) {
                         serverChannel.write(ByteBuffer.wrap("S".getBytes()));
                     } else {
